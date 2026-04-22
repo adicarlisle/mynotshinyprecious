@@ -24,9 +24,9 @@ layout: default
   }
 </style>
 <article class="round padding">
-  <title>This isn't a Shiny app</title>
-  <h1>It's our own, our precious</h1>
-  <p class="fire-text>Ash nazg durbatulûk, ash nazg gimbatul, ash nazg thrakatulûk agh burzum-ishi krimpatul.</p>
+  <h1>This isn't a Shiny app</title>
+  <h2>It's our own, our precious</h1>
+  <p class="fire-text">Ash nazg durbatulûk, ash nazg gimbatul, ash nazg thrakatulûk agh burzum-ishi krimpatul.</p>
 </article>
 
 <div class="space"></div>
