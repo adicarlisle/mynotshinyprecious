@@ -46,3 +46,9 @@ Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed 
     yaxis: { title: 'sin(x)' }
   }, { responsive: true });
 </script>
+
+<style>
+  #plot-div {
+    cursor: default;
+  }
+</style>
