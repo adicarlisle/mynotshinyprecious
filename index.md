@@ -1,18 +1,35 @@
 ---
 layout: default
 ---
+<style>
+  .fire-text {
+    background: linear-gradient(
+      90deg,
+      #ff4500,
+      #ff8c00,
+      #ffd700,
+      #ff8c00,
+      #ff4500
+    );
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: fire-scroll 2s linear infinite;
+  }
 
+  @keyframes fire-scroll {
+    0% { background-position: 0% center; }
+    100% { background-position: 200% center; }
+  }
+</style>
 <article class="round padding">
-  <h1>Lorem Ipsum</h1>
-  <p>Lorem ipsum dolor sit amet...</p>
+  <title>This isn't a Shiny app</title>
+  <h1>It's our own, our precious</h1>
+  <p class="fire-text>Ash nazg durbatulûk, ash nazg gimbatul, ash nazg thrakatulûk agh burzum-ishi krimpatul.</p>
 </article>
 
 <div class="space"></div>
-
-<article class="round padding">
-  <h2>Section Two</h2>
-  <p>Sed ut perspiciatis...</p>
-</article>
 
 <article class="round padding surface">
   <h5> Sine Wave </h5>
