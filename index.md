@@ -94,7 +94,14 @@ layout: default
     },
     {
       x: waypoints.map(w => w.dist),
-      y: waypoints.map(w => 0),
+       y: waypoints.map(w => {
+    const densX = data.values[0].values;
+    const densY = data.values[1].values;
+    const nearest = densX.reduce((bestIdx, val, idx) =>
+      Math.abs(val - w.dist) < Math.abs(densX[bestIdx] - w.dist) ? idx : bestIdx, 0
+    );
+    return densY[nearest];
+  }),,
       mode: 'markers+text',
       type: 'scatter',
       name: 'Waypoints',
