@@ -41,11 +41,6 @@ layout: default
 
 <div class="space"></div>
 
-<article class="round padding surface">
-  <h5>The Journey to Mordor</h5>
-  <div id="plot-div" style="width:100%;height:450px;cursor:default;"></div>
-</article>
-
 <script src="assets/js/coi-serviceworker.js"></script>
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
 <script type="module">
