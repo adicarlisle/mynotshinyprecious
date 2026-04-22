@@ -106,13 +106,9 @@ layout: default
     title: '',
     xaxis: {
       title: 'Distance from the Shire (m)',
-      tickvals: waypoints.map(w => w.dist),
-      ticktext: waypoints.map(w => w.name),
-      tickangle: -45
     },
     yaxis: {
       title: 'Time spent (density)',
-      showticklabels: false
     },
     paper_bgcolor: 'transparent',
     plot_bgcolor: 'transparent',
