@@ -16,7 +16,7 @@ Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed 
 
 <div id="plot-div" style="width:100%;height:450px;"></div>
 
-<script src="/assets/js/coi-serviceworker.js"></script>
+<script src="assets/js/coi-serviceworker.js"></script>
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
 <script type="module">
   import { WebR } from 'https://webr.r-wasm.org/latest/webr.mjs';
@@ -24,7 +24,7 @@ Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed 
   const webR = new WebR();
   await webR.init();
 
-  const response = await fetch('/assets/analysis.R');
+  const response = await fetch('assets/analysis.R');
   const rCode = await response.text();
 
   const shelter = await new webR.Shelter();
