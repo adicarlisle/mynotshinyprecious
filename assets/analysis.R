@@ -1,6 +1,5 @@
-# Generate some data
-x <- seq(0, 2 * pi, length.out = 100)
-y <- sin(x)
-
-# Return data for Plotly visualization
-list(x = x, y = y)
+con <- textConnection(csv_text)
+data <- read.csv(con)
+close(con)
+dens <- density(data$dist_from_shire, bw = 30000)
+list(x = dens$x, y = dens$y)
