@@ -78,11 +78,12 @@ layout: default
       x: data.values[0].values,
       y: data.values[1].values,
       type: 'scatter',
-      mode: 'lines',
+      mode: 'lines+markers',
       fill: 'tozeroy',
       name: 'Time spent',
       line: { color: '#6750a4', width: 2 },
       fillcolor: 'rgba(103, 80, 164, 0.2)',
+      marker: {color: '#6750a4', size: 3 },
       hovertemplate: '<b>%{text}</b><br>Distance: %{x:.0f}m<br>Density: %{y:.6f}<extra></extra>',
       text: data.values[0].values.map(x => {
         const nearest = waypoints.reduce((a, b) =>
@@ -106,6 +107,8 @@ layout: default
     title: '',
     xaxis: {
       title: 'Distance from the Shire (m)',
+      tickvals: [0, 200000, 400000, 600000, 800000, 1000000],
+      ticktext: ['0', '200km', '400km', '600km', '800km', '1,000km']
     },
     yaxis: {
       title: 'Time spent (density)',
