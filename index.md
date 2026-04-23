@@ -17,79 +17,161 @@ layout: default
     0%   { background-position: 0%   center; }
     100% { background-position: 200% center; }
   }
+
+  #wordcloud-modal {
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.6);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #wordcloud-modal.open {
+    display: flex;
+  }
+
+  #wordcloud-inner {
+    position: relative;
+    width: 90%;
+    max-width: 700px;
+  }
+
+  #wordcloud-close {
+    position: absolute;
+    top: -2rem;
+    right: 0;
+    cursor: pointer;
+    color: white;
+    font-size: 1.5rem;
+  }
+
+  #wordcloud-canvas {
+    width: 100%;
+    border-radius: 12px;
+  }
 </style>
 
-<article >
+<article class="round padding">
   <h1>This isn't a Shiny app</h1>
-  <h3>It's our own, our precious</h3>
+  <h2>It's our own, our precious</h2>
+  <p class="fire-text">Ash nazg durbatulûk, ash nazg gimbatul, ash nazg thrakatulûk agh burzum-ishi krimpatul.</p>
 </article>
 
 <div class="space"></div>
 
 <article class="round padding surface">
   <h5>The Journey to Mordor</h5>
-  <div id="plot-div" style="width:100%;height:450px;cursor:default;"></div>
+  <p id="plot-status">Loading R environment...</p>
+  <div id="plot-div" style="width:100%;height:450px;cursor:default;display:none;"></div>
 </article>
 
 <div class="space"></div>
 
-<footer class="padding center-align">
+<footer class="round padding center-align">
   <p class="fire-text">Ash nazg durbatulûk, ash nazg gimbatul, ash nazg thrakatulûk agh burzum-ishi krimpatul.</p>
 </footer>
+
+<!-- wordcloud modal -->
+<div id="wordcloud-modal">
+  <div id="wordcloud-inner">
+    <span id="wordcloud-close">✕</span>
+    <article class="round padding surface">
+      <h5 id="wordcloud-title">Words of the Journey</h5>
+      <p id="wordcloud-status"></p>
+      <canvas id="wordcloud-canvas" width="800" height="400"></canvas>
+    </article>
+  </div>
+</div>
 
 <script src="assets/js/coi-serviceworker.js"></script>
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
 <script type="module">
   import { WebR } from 'https://webr.r-wasm.org/latest/webr.mjs';
 
+  const API_KEY = 'Your script pulled a publicly accessible api key, enjoy using it, like my page';
+  const OTHER_API_KEY = 'eCsax85_YfFx4fW6Ao88';
+  const FILMS = {
+    fellowship: '5cd95395de30eff6ebccde5c',
+    towers:     '5cd95395de30eff6ebccde5b',
+    king:       '5cd95395de30eff6ebccde5d'
+  };
+
+  const waypoints = [
+    { name: 'Hobbiton',       dist: 0,       film: 'fellowship' },
+    { name: 'Bree',           dist: 79128,   film: 'fellowship' },
+    { name: 'Weathertop',     dist: 163598,  film: 'fellowship' },
+    { name: 'Rivendell',      dist: 368793,  film: 'fellowship' },
+    { name: 'Caradhras',      dist: 487993,  film: 'fellowship' },
+    { name: 'Caras Galadhon', dist: 575936,  film: 'fellowship' },
+    { name: 'Rauros',         dist: 797301,  film: 'towers'     },
+    { name: 'Minas Tirith',   dist: 920261,  film: 'king'       },
+    { name: 'Mt Doom',        dist: 1047945, film: 'king'       }
+  ];
+
   // ── webR init ────────────────────────────────────────────────────────────────
   const webR = new WebR();
   await webR.init();
 
-  // ── fetch CSV and pass into R environment ────────────────────────────────────
+  // pre-install packages on page load
+  document.getElementById('plot-status').textContent = 'Installing R packages...';
+  await webR.evalR(`
+    webr::install('wordcloud')
+    webr::install('tm')
+  `);
+
+  // ── fetch CSV and run density analysis ──────────────────────────────────────
+  document.getElementById('plot-status').textContent = 'Running analysis...';
   const csvText = await fetch('assets/route_distances.csv').then(r => r.text());
   await webR.evalR(`csv_text <- '${csvText}'`);
 
-  // ── run analysis.R ───────────────────────────────────────────────────────────
-  const rCode    = await fetch('assets/analysis.R').then(r => r.text());
-  const shelter  = await new webR.Shelter();
-  const rResult  = await shelter.evalR(rCode);
-  const raw      = await rResult.toJs();
+  const rCode   = await fetch('assets/analysis.R').then(r => r.text());
+  const shelter = await new webR.Shelter();
+  const rResult = await shelter.evalR(rCode);
+  const raw     = await rResult.toJs();
   shelter.purge();
 
   const densX = Array.from(raw.values[0].values);
   const densY = Array.from(raw.values[1].values);
 
-  // ── waypoints ────────────────────────────────────────────────────────────────
-  const waypoints = [
-    { name: 'Hobbiton',       dist: 0       },
-    { name: 'Bree',           dist: 79128   },
-    { name: 'Weathertop',     dist: 163598  },
-    { name: 'Rivendell',      dist: 368793  },
-    { name: 'Caradhras',      dist: 487993  },
-    { name: 'Caras Galadhon', dist: 575936  },
-    { name: 'Rauros',         dist: 797301  },
-    { name: 'Minas Tirith',   dist: 920261  },
-    { name: 'Mt Doom',        dist: 1047945 }
-  ];
+  // ── fetch all quotes upfront ─────────────────────────────────────────────────
+  document.getElementById('plot-status').textContent = 'Fetching quotes from Middle Earth...';
 
-  // find nearest density y value for a given x distance
+  const fetchQuotes = async (filmId) => {
+    const res  = await fetch(`https://the-one-api.dev/v2/movie/${filmId}/quote?limit=1000`, {
+      headers: { Authorization: `Bearer ${OTHER_API_KEY}` }
+    });
+    const json = await res.json();
+    return json.docs.map(q => q.dialog).join(' ');
+  };
+
+  const quoteCache = {
+    fellowship: await fetchQuotes(FILMS.fellowship),
+    towers:     await fetchQuotes(FILMS.towers),
+    king:       await fetchQuotes(FILMS.king)
+  };
+
+  // ── render journey plot ──────────────────────────────────────────────────────
+  document.getElementById('plot-status').remove();
+  document.getElementById('plot-div').style.display = 'block';
+
   const snapToCurve = dist =>
     densY[densX.reduce((best, val, idx) =>
       Math.abs(val - dist) < Math.abs(densX[best] - dist) ? idx : best, 0
     )];
 
-  // label each density point with its nearest waypoint name
   const hoverLabels = densX.map(x =>
     waypoints.reduce((a, b) =>
       Math.abs(b.dist - x) < Math.abs(a.dist - x) ? b : a
     ).name
   );
 
-  // ── plot ─────────────────────────────────────────────────────────────────────
-  Plotly.newPlot('plot-div', [
+  const plotDiv = document.getElementById('plot-div');
+
+  Plotly.newPlot(plotDiv, [
     {
-      // density curve
       x:             densX,
       y:             densY,
       type:          'scatter',
@@ -103,7 +185,6 @@ layout: default
       hovertemplate: '<b>%{text}</b><br>Distance: %{x:.0f}m<br>Density: %{y:.6f}<extra></extra>'
     },
     {
-      // waypoint markers
       x:             waypoints.map(w => w.dist),
       y:             waypoints.map(w => snapToCurve(w.dist)),
       type:          'scatter',
@@ -116,13 +197,13 @@ layout: default
     }
   ], {
     xaxis: {
-      title:     'Distance from the Shire',
-      tickvals:  [0, 200000, 400000, 600000, 800000, 1000000],
-      ticktext:  ['0', '200km', '400km', '600km', '800km', '1,000km']
+      title:    'Distance from the Shire',
+      tickvals: [0, 200000, 400000, 600000, 800000, 1000000],
+      ticktext: ['0', '200km', '400km', '600km', '800km', '1,000km']
     },
     yaxis: {
-      title:           'Time spent',
-      showticklabels:  false
+      title:          'Time spent',
+      showticklabels: false
     },
     paper_bgcolor: 'transparent',
     plot_bgcolor:  'transparent',
@@ -130,4 +211,72 @@ layout: default
     showlegend:    false,
     margin:        { b: 120 }
   }, { responsive: true });
+
+  // ── wordcloud on waypoint click ──────────────────────────────────────────────
+  const modal         = document.getElementById('wordcloud-modal');
+  const modalTitle    = document.getElementById('wordcloud-title');
+  const modalStatus   = document.getElementById('wordcloud-status');
+  const modalCanvas   = document.getElementById('wordcloud-canvas');
+  const modalClose    = document.getElementById('wordcloud-close');
+
+  modalClose.addEventListener('click', () => modal.classList.remove('open'));
+  modal.addEventListener('click', e => {
+    if (e.target === modal) modal.classList.remove('open');
+  });
+
+  plotDiv.on('plotly_click', async (event) => {
+    const point = event.points[0];
+
+    // only respond to waypoint markers (trace index 1)
+    if (point.curveNumber !== 1) return;
+
+    const wp   = waypoints[point.pointIndex];
+    const text = quoteCache[wp.film];
+
+    modalTitle.textContent  = `${wp.name} — Words of the Journey`;
+    modalStatus.textContent = 'Generating wordcloud...';
+    modal.classList.add('open');
+
+    // pass text into webR and render wordcloud to canvas
+    const safeText = text.replace(/'/g, "\\'").replace(/\n/g, ' ');
+    await webR.evalR(`section_text <- '${safeText}'`);
+
+    // set up webR canvas device pointing at our HTML canvas
+    const { OffscreenCanvas } = await webR.evalR('TRUE'); // ensure canvas available
+    await webR.evalR(`
+      library(wordcloud)
+      library(tm)
+
+      words  <- unlist(strsplit(tolower(section_text), "\\\\W+"))
+      words  <- words[nchar(words) > 3]
+      stops  <- c(stopwords("en"), "that", "with", "have", "will", "your", "this", "from", "they", "what")
+      words  <- words[!words %in% stops]
+      freq   <- sort(table(words), decreasing = TRUE)[1:150]
+
+      webr::canvas(width = 800, height = 400)
+      par(bg = NA)
+      wordcloud(
+        names(freq), as.numeric(freq),
+        max.words  = 100,
+        random.order = FALSE,
+        colors     = c("#6750a4", "#ff4500", "#ff8c00", "#ffd700"),
+        scale      = c(4, 0.5)
+      )
+      dev.off()
+    `);
+
+    // capture the webR canvas output
+    const canvas  = await webR.evalR('webr::canvas_fetch()');
+    const canvasData = await canvas.toJs();
+
+    // draw onto our HTML canvas
+    const ctx  = modalCanvas.getContext('2d');
+    const img  = new Image();
+    img.onload = () => {
+      ctx.clearRect(0, 0, modalCanvas.width, modalCanvas.height);
+      ctx.drawImage(img, 0, 0);
+      modalStatus.textContent = '';
+    };
+    img.src = canvasData.values[0].values[0];
+  });
 </script>
