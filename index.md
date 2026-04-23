@@ -67,7 +67,6 @@ layout: default
 <article class="round padding">
   <h1>This isn't a Shiny app</h1>
   <h2>It's our own, our precious</h2>
-  <p class="fire-text">Ash nazg durbatulûk, ash nazg gimbatul, ash nazg thrakatulûk agh burzum-ishi krimpatul.</p>
 </article>
 
 <div class="space"></div>
