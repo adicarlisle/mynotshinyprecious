@@ -19,9 +19,9 @@ layout: default
   }
 </style>
 
-<article class="round padding">
+<article >
   <h1>This isn't a Shiny app</h1>
-  <h3>It's our own, our precious</h2>
+  <h3>It's our own, our precious</h3>
 </article>
 
 <div class="space"></div>
@@ -33,7 +33,7 @@ layout: default
 
 <div class="space"></div>
 
-<footer class="round padding center-align">
+<footer class="padding center-align">
   <p class="fire-text">Ash nazg durbatulûk, ash nazg gimbatul, ash nazg thrakatulûk agh burzum-ishi krimpatul.</p>
 </footer>
 
