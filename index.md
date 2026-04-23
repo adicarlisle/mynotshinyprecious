@@ -52,6 +52,16 @@ layout: default
     width: 100%;
     border-radius: 12px;
   }
+
+  .scatterlayer .trace:last-child .point path {
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%   { opacity: 1;   transform: scale(1);   }
+    50%  { opacity: 0.6; transform: scale(1.3); }
+    100% { opacity: 1;   transform: scale(1);   }
+  }
 </style>
 
 <article class="round padding">
@@ -92,7 +102,7 @@ layout: default
 <script type="module">
   import { WebR } from 'https://webr.r-wasm.org/latest/webr.mjs';
 
-  const DEMON_MAGIC = 'eCsax85_YfFx4fW6Ao88';
+  const API_KEY = 'YOUR_KEY_HERE';
 
   const FILMS = {
     fellowship: '5cd95395de30eff6ebccde5c',
@@ -142,7 +152,7 @@ layout: default
 
   const fetchQuotes = async (filmId) => {
     const res  = await fetch(`https://the-one-api.dev/v2/movie/${filmId}/quote?limit=1000`, {
-      headers: { Authorization: `Bearer ${DEMON_MAGIC}` }
+      headers: { Authorization: `Bearer ${API_KEY}` }
     });
     const json = await res.json();
     return json.docs.map(q => q.dialog).join(' ');
@@ -193,8 +203,8 @@ layout: default
       name:          'Waypoints',
       text:          waypoints.map(w => w.name),
       textposition:  'top center',
-      marker:        { color: '#ff4500', size: 8 },
-      hovertemplate: '<b>%{text}</b><br>%{x:.0f}m from the Shire<extra></extra>'
+      marker:        { color: '#ff4500', size: 12, line: { color: '#ffd700', width: 2 }, symbol: 'circle' },
+      hovertemplate: '<b>%{text}</b><br>%{x:.0f}m from the Shire<br><i>Click to explore words</i><extra></extra>'
     }
   ], {
     xaxis: {
@@ -212,6 +222,17 @@ layout: default
     showlegend:    false,
     margin:        { b: 120 }
   }, { responsive: true });
+
+  // ── cursor change on waypoint hover ──────────────────────────────────────────
+  plotDiv.on('plotly_hover', (event) => {
+    if (event.points[0].curveNumber === 1) {
+      plotDiv.style.cursor = 'pointer';
+    }
+  });
+
+  plotDiv.on('plotly_unhover', () => {
+    plotDiv.style.cursor = 'default';
+  });
 
   // ── modal controls ───────────────────────────────────────────────────────────
   const modal       = document.getElementById('wordcloud-modal');
