@@ -88,11 +88,12 @@ layout: default
 
 <script src="assets/js/coi-serviceworker.js"></script>
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/wordcloud2.js/1.2.2/wordcloud2.min.js"></script>
 <script type="module">
   import { WebR } from 'https://webr.r-wasm.org/latest/webr.mjs';
 
-  const API_KEY = 'Your script pulled a publicly accessible api key, enjoy using it, like my page';
-  const OTHER_API_KEY = 'eCsax85_YfFx4fW6Ao88';
+  const DEMON_MAGIC = 'eCsax85_YfFx4fW6Ao88';
+
   const FILMS = {
     fellowship: '5cd95395de30eff6ebccde5c',
     towers:     '5cd95395de30eff6ebccde5b',
@@ -115,14 +116,14 @@ layout: default
   const webR = new WebR();
   await webR.init();
 
-  // pre-install packages on page load
+  // ── pre-install packages ─────────────────────────────────────────────────────
   document.getElementById('plot-status').textContent = 'Installing R packages...';
   await webR.evalR(`
     webr::install('wordcloud')
     webr::install('tm')
   `);
 
-  // ── fetch CSV and run density analysis ──────────────────────────────────────
+  // ── fetch CSV and run density analysis ───────────────────────────────────────
   document.getElementById('plot-status').textContent = 'Running analysis...';
   const csvText = await fetch('assets/route_distances.csv').then(r => r.text());
   await webR.evalR(`csv_text <- '${csvText}'`);
@@ -141,7 +142,7 @@ layout: default
 
   const fetchQuotes = async (filmId) => {
     const res  = await fetch(`https://the-one-api.dev/v2/movie/${filmId}/quote?limit=1000`, {
-      headers: { Authorization: `Bearer ${OTHER_API_KEY}` }
+      headers: { Authorization: `Bearer ${DEMON_MAGIC}` }
     });
     const json = await res.json();
     return json.docs.map(q => q.dialog).join(' ');
@@ -212,22 +213,21 @@ layout: default
     margin:        { b: 120 }
   }, { responsive: true });
 
-  // ── wordcloud on waypoint click ──────────────────────────────────────────────
-  const modal         = document.getElementById('wordcloud-modal');
-  const modalTitle    = document.getElementById('wordcloud-title');
-  const modalStatus   = document.getElementById('wordcloud-status');
-  const modalCanvas   = document.getElementById('wordcloud-canvas');
-  const modalClose    = document.getElementById('wordcloud-close');
+  // ── modal controls ───────────────────────────────────────────────────────────
+  const modal       = document.getElementById('wordcloud-modal');
+  const modalTitle  = document.getElementById('wordcloud-title');
+  const modalStatus = document.getElementById('wordcloud-status');
+  const modalCanvas = document.getElementById('wordcloud-canvas');
+  const modalClose  = document.getElementById('wordcloud-close');
 
   modalClose.addEventListener('click', () => modal.classList.remove('open'));
   modal.addEventListener('click', e => {
     if (e.target === modal) modal.classList.remove('open');
   });
 
+  // ── wordcloud on waypoint click ──────────────────────────────────────────────
   plotDiv.on('plotly_click', async (event) => {
     const point = event.points[0];
-
-    // only respond to waypoint markers (trace index 1)
     if (point.curveNumber !== 1) return;
 
     const wp   = waypoints[point.pointIndex];
@@ -237,74 +237,39 @@ layout: default
     modalStatus.textContent = 'Generating wordcloud...';
     modal.classList.add('open');
 
-    // pass text into webR and render wordcloud to canvas
     const safeText = text.replace(/'/g, "\\'").replace(/\n/g, ' ');
     await webR.evalR(`section_text <- '${safeText}'`);
 
-    // set up webR canvas device pointing at our HTML canvas
-    const { OffscreenCanvas } = await webR.evalR('TRUE'); // ensure canvas available
-    await webR.evalR(`
-      library(wordcloud)
-      library(tm)
-
-      words  <- unlist(strsplit(tolower(section_text), "\\\\W+"))
-      words  <- words[nchar(words) > 3]
-      stops  <- c(stopwords("en"), "that", "with", "have", "will", "your", "this", "from", "they", "what")
-      words  <- words[!words %in% stops]
-      freq   <- sort(table(words), decreasing = TRUE)[1:150]
-
-      webr::canvas(width = 800, height = 400)
-      par(bg = NA)
-      wordcloud(
-        names(freq), as.numeric(freq),
-        max.words  = 100,
-        random.order = FALSE,
-        colors     = c("#6750a4", "#ff4500", "#ff8c00", "#ffd700"),
-        scale      = c(4, 0.5)
-      )
-      dev.off()
-    `);
-
-    // capture webR canvas output via message listener
-    const ctx = modalCanvas.getContext('2d');
-    modalStatus.textContent = 'Generating wordcloud...';
-
-    // listen for canvas output from webR
-    const canvasListener = async () => {
-      for await (const msg of await webR.read()) {
-        if (msg.type === 'canvas') {
-          const img = new Image();
-          img.onload = () => {
-            ctx.clearRect(0, 0, modalCanvas.width, modalCanvas.height);
-            ctx.drawImage(img, 0, 0);
-            modalStatus.textContent = '';
-          };
-          img.src = msg.data.src;
-          break;
-        }
-      }
-    };
-
-    canvasListener();
-
-    await webR.evalR(`
-      library(wordcloud)
+    const shelter2   = await new webR.Shelter();
+    const freqResult = await shelter2.evalR(`
       library(tm)
       words <- unlist(strsplit(tolower(section_text), "\\\\W+"))
       words <- words[nchar(words) > 3]
       stops <- c(stopwords("en"), "that", "with", "have", "will", "your", "this", "from", "they", "what")
       words <- words[!words %in% stops]
-      freq  <- sort(table(words), decreasing = TRUE)[1:150]
-      webr::canvas(width = 800, height = 400)
-      par(bg = NA)
-      wordcloud(
-        names(freq), as.numeric(freq),
-        max.words    = 100,
-        random.order = FALSE,
-        colors       = c("#6750a4", "#ff4500", "#ff8c00", "#ffd700"),
-        scale        = c(4, 0.5)
-      )
-      dev.off()
+      freq  <- sort(table(words), decreasing = TRUE)[1:100]
+      list(words = names(freq), freqs = as.numeric(freq))
     `);
+    const freqData = await freqResult.toJs();
+    shelter2.purge();
+
+    const words    = Array.from(freqData.values[0].values);
+    const freqs    = Array.from(freqData.values[1].values);
+    const wordList = words.map((w, i) => [w, freqs[i]]);
+
+    modalStatus.textContent = '';
+
+    const ctx = modalCanvas.getContext('2d');
+    ctx.clearRect(0, 0, modalCanvas.width, modalCanvas.height);
+
+    WordCloud(modalCanvas, {
+      list:            wordList,
+      gridSize:        8,
+      weightFactor:    6,
+      fontFamily:      'sans-serif',
+      color:           () => ['#6750a4','#ff4500','#ff8c00','#ffd700'][Math.floor(Math.random()*4)],
+      backgroundColor: 'transparent',
+      rotateRatio:     0.3
+    });
   });
 </script>
