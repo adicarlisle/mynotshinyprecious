@@ -265,18 +265,39 @@ layout: default
       dev.off()
     `);
 
-    // capture the webR canvas output
-    const canvas  = await webR.evalR('webr::canvas_fetch()');
-    const canvasData = await canvas.toJs();
+    // capture webR canvas output via message listener
+    const ctx = modalCanvas.getContext('2d');
 
-    // draw onto our HTML canvas
-    const ctx  = modalCanvas.getContext('2d');
-    const img  = new Image();
-    img.onload = () => {
-      ctx.clearRect(0, 0, modalCanvas.width, modalCanvas.height);
-      ctx.drawImage(img, 0, 0);
-      modalStatus.textContent = '';
+    webR.canvas = (data) => {
+      const img = new Image();
+      img.onload = () => {
+        ctx.clearRect(0, 0, modalCanvas.width, modalCanvas.height);
+        ctx.drawImage(img, 0, 0);
+        modalStatus.textContent = '';
+      };
+      img.src = data.src;
     };
-    img.src = canvasData.values[0].values[0];
+
+    await webR.evalR(`
+      library(wordcloud)
+      library(tm)
+
+      words <- unlist(strsplit(tolower(section_text), "\\\\W+"))
+      words <- words[nchar(words) > 3]
+      stops <- c(stopwords("en"), "that", "with", "have", "will", "your", "this", "from", "they", "what")
+      words <- words[!words %in% stops]
+      freq  <- sort(table(words), decreasing = TRUE)[1:150]
+
+      webr::canvas(width = 800, height = 400)
+      par(bg = NA)
+      wordcloud(
+        names(freq), as.numeric(freq),
+        max.words    = 100,
+        random.order = FALSE,
+        colors       = c("#6750a4", "#ff4500", "#ff8c00", "#ffd700"),
+        scale        = c(4, 0.5)
+      )
+      dev.off()
+    `);
   });
 </script>
