@@ -50,6 +50,7 @@ When a waypoint is clicked, webR runs a second analysis — text cleaning, stopw
 ---
 
 ## Files
+```
 ├── index.md              # main page — layout, JS, Plotly, webR orchestration
 ├── assets/
 │   ├── analysis.R        # R script — reads CSV, runs density(), returns list
@@ -60,6 +61,7 @@ When a waypoint is clicked, webR runs a second analysis — text cleaning, stopw
 │   └── default.html      # Beer CSS layout with dark theme
 ├── _config.yml           # Jekyll config
 └── Gemfile               # Jekyll dependencies
+```
 ---
 
 ## Local data extraction
