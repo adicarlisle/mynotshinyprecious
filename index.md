@@ -21,8 +21,7 @@ layout: default
 
 <article class="round padding">
   <h1>This isn't a Shiny app</h1>
-  <h2>It's our own, our precious</h2>
-  <p class="fire-text">Ash nazg durbatulûk, ash nazg gimbatul, ash nazg thrakatulûk agh burzum-ishi krimpatul.</p>
+  <h3>It's our own, our precious</h2>
 </article>
 
 <div class="space"></div>
@@ -33,6 +32,10 @@ layout: default
 </article>
 
 <div class="space"></div>
+
+<footer class="round padding center-align">
+  <p class="fire-text">Ash nazg durbatulûk, ash nazg gimbatul, ash nazg thrakatulûk agh burzum-ishi krimpatul.</p>
+</footer>
 
 <script src="assets/js/coi-serviceworker.js"></script>
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
