@@ -1,2 +1,4 @@
 title: My Not Shiny Precious
 theme: minima
+minima:
+  skin: dark
