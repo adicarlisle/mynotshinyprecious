@@ -101,7 +101,7 @@ layout: default
 <script type="module">
   import { WebR } from 'https://webr.r-wasm.org/latest/webr.mjs';
 
-  const API_KEY = 'YOUR_KEY_HERE';
+  const DEMON_MAGIC = 'eCsax85_YfFx4fW6Ao88';
 
   const FILMS = {
     fellowship: '5cd95395de30eff6ebccde5c',
@@ -151,7 +151,7 @@ layout: default
 
   const fetchQuotes = async (filmId) => {
     const res  = await fetch(`https://the-one-api.dev/v2/movie/${filmId}/quote?limit=1000`, {
-      headers: { Authorization: `Bearer ${API_KEY}` }
+      headers: { Authorization: `Bearer ${DEMON_MAGIC}` }
     });
     const json = await res.json();
     return json.docs.map(q => q.dialog).join(' ');
@@ -180,7 +180,7 @@ layout: default
 
   const plotDiv = document.getElementById('plot-div');
 
-  Plotly.newPlot(plotDiv, [
+  .newPlot(plotDiv, [
     {
       x:             densX,
       y:             densY,
@@ -217,7 +217,7 @@ layout: default
     },
     paper_bgcolor: 'transparent',
     plot_bgcolor:  'transparent',
-    font:          { color: 'inherit' },
+    font:          { color: '#e6e1e5' },
     showlegend:    false,
     margin:        { b: 120 }
   }, { responsive: true });
