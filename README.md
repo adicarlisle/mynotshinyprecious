@@ -1,4 +1,4 @@
-# mynotshinyprecious
+# My Not [Shiny](https://www.shinyapps.io/) Precious
 
 > *If it was shiny it wouldn't be free*
 
