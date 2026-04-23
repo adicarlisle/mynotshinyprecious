@@ -108,7 +108,82 @@ write.csv(
   row.names = FALSE
 )
 ```
+Replace the local data extraction section with this:
 
+## How the route distances were generated
+
+The `route_distances.csv` is the result of a small geospatial analysis pipeline run locally in R before anything was committed to the repo. It is a static file — it only needs to be regenerated if you want to change the route or the weighting.
+
+### Step 1 — Parse the ME-GIS place names
+
+The ME-GIS repository does not have a conventional CSV or GeoJSON of place names. Instead, coordinates are buried in a proprietary key-value format inside `Combined_Placenames.xyz`, where each location is represented as a block of metadata followed by a bare coordinate pair:
+
+DESCRIPTION=SeaNames
+NAME=Bay of Balfalas
+POINT_SYMBOL=No Symbol
+FONT_NAME=Uncial
+...
+820305.556,325037.378
+
+
+The file was parsed block by block in R, splitting on blank lines and extracting the `NAME=` and coordinate lines from each block. This produced a clean data frame of 665 named locations with x/y coordinates in the ME-GIS coordinate system, where the entire map of Middle Earth covers a 2,000km × 2,000km area at 200 metres per pixel resolution.
+
+### Step 2 — Identify waypoint coordinates
+
+Key locations along the Fellowship's route were searched by name in the parsed place data:
+
+Hobbiton        (515948, 1043820)
+Bree            (found via grepl match)
+Weathertop      (found via grepl match)
+Rivendell       (found via grepl match)
+Caradhras       (872481,  939177)  — used as Moria pass proxy
+Caras Galadhon  (959239,  924793)  — Lothlórien
+Rauros          (found via grepl match)
+Minas Tirith    (found via grepl match)
+Mt Doom         (1230413, 667554)
+
+
+Moria itself is not named in the dataset, so Caradhras — the mountain pass the Fellowship attempted before being driven underground — was used as the geographic proxy. Caras Galadhon is the correct name for the city at the heart of Lothlórien.
+
+### Step 3 — Calculate cumulative distances
+
+Straight-line Euclidean distances between consecutive waypoints were calculated in the ME-GIS coordinate space and accumulated to give a total cumulative distance from Hobbiton for each waypoint:
+
+Hobbiton        →       0m
+Bree            →  79,128m
+Weathertop      → 163,598m
+Rivendell       → 368,793m
+Caradhras       → 487,993m
+Caras Galadhon  → 575,936m
+Rauros          → 797,301m
+Minas Tirith    → 920,261m
+Mt Doom         → 1,047,945m
+
+
+The total journey from Bag End to the fires of Mount Doom covers just over 1,048km in map units, which is consistent with Tolkien's own geographical appendices.
+
+### Step 4 — Weight by narrative time
+
+A straight interpolation of 500 evenly spaced points along the route would produce a flat density — every stretch of the journey would look equally significant. To make the density plot tell the story of the journey rather than just its geography, each waypoint was repeated a number of times proportional to how long the Fellowship (or Frodo and Sam) actually spent there:
+
+Hobbiton        20 days   — leisurely departure
+Bree            10 days   — brief stop
+Weathertop      10 days   — Frodo stabbed, slow recovery
+Rivendell       60 days   — the Council of Elrond, long rest
+Caradhras       15 days   — the attempt on the mountain pass
+Caras Galadhon  40 days   — weeks with Galadriel in Lothlórien
+Rauros          10 days   — the breaking of the Fellowship
+Minas Tirith    50 days   — the siege of Gondor
+Mt Doom         20 days   — the final approach and destruction of the Ring
+
+
+These weights mean the density peaks at Rivendell and Minas Tirith reflect the narrative reality — these were months-long chapters of the story, not passing moments.
+
+### Step 5 — Add terrain noise
+
+The weighted distance values were repeated into a vector of 235 points and Gaussian noise was added with a standard deviation of 20,000m. This simulates the natural variation of travel — the Fellowship did not walk in a perfectly straight line between waypoints, and the noise prevents the density estimate from producing sharp unnatural spikes at exact waypoint distances. `set.seed(42)` was used for reproducibility.
+
+The final CSV contains a single column `dist_from_shire` with 235 values ready for R's `density()` function.
 ---
 
 ## Design decisions
