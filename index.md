@@ -65,8 +65,7 @@ layout: default
 </style>
 
 <article class="round padding">
-  <h1>This isn't a Shiny app</h1>
-  <h2>It's our own, our precious</h2>
+  <h1>This isn't a Shiny app, it's our own, our... precious</h1>
 </article>
 
 <div class="space"></div>
