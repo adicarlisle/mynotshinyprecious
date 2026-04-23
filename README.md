@@ -108,7 +108,6 @@ write.csv(
   row.names = FALSE
 )
 ```
-Replace the local data extraction section with this:
 
 ## How the route distances were generated
 
