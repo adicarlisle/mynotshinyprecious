@@ -180,7 +180,7 @@ layout: default
 
   const plotDiv = document.getElementById('plot-div');
 
-  .newPlot(plotDiv, [
+  newPlot(plotDiv, [
     {
       x:             densX,
       y:             densY,
