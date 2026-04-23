@@ -1,32 +1,135 @@
-# notshiny
-If it was shiny it wouldn't be free
+# mynotshinyprecious
 
-## Overview
+> *If it was shiny it wouldn't be free*
 
-This project demonstrates an interactive web-based data visualization using WebR and Plotly. It runs R code directly in your browser without any server backend!
+An interactive data visualisation built entirely with free, open-source tools and no server backend. R runs in your browser via WebAssembly, charts are rendered with Plotly, and the whole thing is served as a static Jekyll site on GitHub Pages.
 
-## Features
+---
 
-- **WebR**: Execute R code in the browser using WebAssembly
-- **Plotly**: Interactive charts and graphs with hover, zoom, and pan capabilities
-- **Sine Wave Visualization**: Displays an animated sine wave chart generated from R code
+## What it does
 
-## How It Works
+The centrepiece is an interactive density plot of Frodo's journey from the Shire to Mount Doom, built from real GIS data extracted from the [ME-GIS project](https://github.com/andrewheiss/ME-GIS) — a community-built Geographic Information System of Tolkien's Middle Earth.
 
-1. The R script (`assets/analysis.R`) generates x and y coordinates for a sine wave
-2. WebR evaluates the R code and returns the data as JSON
-3. Plotly renders the interactive chart in the browser
-4. No server-side processing required!
+Click any waypoint on the journey chart and a modal opens with a wordcloud of dialogue from that section of the story, generated live in R from quotes pulled from [The One API](https://the-one-api.dev/).
 
-## Technologies
+---
 
-- [WebR](https://webr.r-wasm.org/) - R running in WebAssembly
-- [Plotly](https://plotly.com/) - Interactive graphing library
-- R - Statistical computing language
-- Jekyll - Static site generator
+## How it works
+
+### Data pipeline
+
+1. **ME-GIS shapefiles** — the `Combined_Placenames.xyz` file from the ME-GIS project was parsed in R to extract real map coordinates for key locations along the Fellowship's route
+2. **Route distances** — cumulative straight-line distances between waypoints were calculated in R using the ME-GIS coordinate system (metres), producing a `route_distances.csv` of 500 interpolated and noise-sampled points weighted by time spent at each location
+3. **Density estimation** — R's `density()` function produces a kernel density estimate of where the journey was concentrated, revealing where the Fellowship lingered vs passed through quickly
+
+### In-browser R
+
+WebR runs a full R session in the browser via WebAssembly. On page load it:
+
+- Installs `wordcloud` and `tm` packages into the webR virtual filesystem
+- Fetches `route_distances.csv` from the site and passes it into the R environment
+- Runs `analysis.R` to compute the density estimate
+- Returns the result to JavaScript for Plotly to render
+
+When a waypoint is clicked, webR runs a second analysis — text cleaning, stopword removal, and word frequency counting — on live quote data from The One API, returning word frequencies to JavaScript for the wordcloud renderer.
+
+### Stack
+
+| Layer | Technology |
+|---|---|
+| Static site | Jekyll + GitHub Pages |
+| Theme | Beer CSS (Material Design 3) |
+| In-browser R | WebR (R via WebAssembly) |
+| Charting | Plotly.js |
+| Wordcloud | wordcloud2.js |
+| GIS data | ME-GIS / andrewheiss |
+| Quote data | The One API |
+| R packages | `tm`, `wordcloud` |
+| COOP/COEP headers | coi-serviceworker |
+
+---
 
 ## Files
+├── index.md              # main page — layout, JS, Plotly, webR orchestration
+├── assets/
+│   ├── analysis.R        # R script — reads CSV, runs density(), returns list
+│   ├── route_distances.csv  # pre-computed journey distances (generated locally)
+│   └── js/
+│       └── coi-serviceworker.js  # enables SharedArrayBuffer for webR
+├── _layouts/
+│   └── default.html      # Beer CSS layout with dark theme
+├── _config.yml           # Jekyll config
+└── Gemfile               # Jekyll dependencies
+---
 
-- `index.md` - Main page with the visualization and lorem ipsum content
-- `assets/analysis.R` - R script that generates the sine wave data
-- `_config.yml` - Jekyll configuration
+## Local data extraction
+
+The `route_distances.csv` was generated locally using R and the ME-GIS dataset. To regenerate it:
+
+```r
+library(sf)
+library(dplyr)
+
+# clone https://github.com/andrewheiss/ME-GIS
+lines  <- readLines("ME-GIS/Combined_Placenames.xyz")
+blocks <- split(lines, cumsum(lines == ""))
+
+parse_block <- function(block) {
+  name_line  <- block[grepl("^NAME=", block)]
+  coord_line <- block[grepl("^[0-9]", block)]
+  if (length(name_line) == 0 || length(coord_line) == 0) return(NULL)
+  name   <- gsub("^NAME=", "", name_line[1])
+  coords <- strsplit(coord_line[1], ",")[[1]]
+  data.frame(name = name, x = as.numeric(coords[1]), y = as.numeric(coords[2]))
+}
+
+places <- do.call(rbind, Filter(Negate(is.null), lapply(blocks, parse_block)))
+
+# waypoints with days spent (weighted by narrative time)
+waypoints <- data.frame(
+  name = c("Hobbiton", "Bree", "Weathertop", "Rivendell",
+           "Caradhras", "Caras Galadhon", "Rauros", "Minas Tirith", "Mt Doom"),
+  dist = c(0, 79128, 163598, 368793, 487993, 575936, 797301, 920261, 1047945),
+  days = c(20, 10, 10, 60, 15, 40, 10, 50, 20)
+)
+
+weighted_dists <- rep(waypoints$dist, waypoints$days)
+set.seed(42)
+noise <- rnorm(length(weighted_dists), mean = 0, sd = 20000)
+
+write.csv(
+  data.frame(dist_from_shire = pmax(weighted_dists + noise, 0)),
+  "assets/route_distances.csv",
+  row.names = FALSE
+)
+```
+
+---
+
+## Design decisions
+
+**Why webR instead of a Shiny server?**
+Shiny requires a running R server which costs money and infrastructure. WebR brings R to the browser as WebAssembly — fully client-side, no server, no cost, no maintenance.
+
+**Why fetch the R script as a file?**
+`analysis.R` is fetched and evaluated at runtime rather than inlined in JavaScript. This means data scientists can edit pure R without touching any JavaScript — the contract between R and JS is just the final `list()` the script returns.
+
+**Why pre-fetch all quotes on load?**
+The One API has rate limits. Fetching all three films' quotes upfront on page load means wordcloud generation is instant on click — no per-click API latency.
+
+**Why kernel density and not a bar chart?**
+The journey is continuous, not categorical. A density estimate shows the shape of where time was concentrated across the full 1,048km route rather than just at discrete waypoints.
+
+---
+
+## Acknowledgements
+
+- [ME-GIS](https://github.com/andrewheiss/ME-GIS) — Andrew Heiss and the ME-DEM team for the Middle Earth GIS dataset
+- [The One API](https://the-one-api.dev/) — for the LOTR quote data
+- [WebR](https://webr.r-wasm.org/) — George Stagg and Lionel Henry for R in the browser
+- [coi-serviceworker](https://github.com/gzuidhof/coi-serviceworker) — Guido Zuidhof for the COOP/COEP service worker polyfill
+- J.R.R. Tolkien — for the world
+
+---
+
+*One repo to rule them all.*
