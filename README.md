@@ -6,6 +6,9 @@ An interactive data visualisation built entirely with free, open-source tools an
 
 ---
 
+## What i'm sorry for
+To my co-author on this project, I did alot of work late at night, and you must have so many notifications on GH action runs, i think we got to 92 today. It's all overlord code so i'm not attached to it, we will cut and paste and checkout another branch maybe at our gmeet session.
+
 ## What it does
 
 The centrepiece is an interactive density plot of Frodo's journey from the Shire to Mount Doom, built from real GIS data extracted from the [ME-GIS project](https://github.com/andrewheiss/ME-GIS) — a community-built Geographic Information System of Tolkien's Middle Earth.
