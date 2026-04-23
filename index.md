@@ -267,27 +267,34 @@ layout: default
 
     // capture webR canvas output via message listener
     const ctx = modalCanvas.getContext('2d');
+    modalStatus.textContent = 'Generating wordcloud...';
 
-    webR.canvas = (data) => {
-      const img = new Image();
-      img.onload = () => {
-        ctx.clearRect(0, 0, modalCanvas.width, modalCanvas.height);
-        ctx.drawImage(img, 0, 0);
-        modalStatus.textContent = '';
-      };
-      img.src = data.src;
+    // listen for canvas output from webR
+    const canvasListener = async () => {
+      for await (const msg of await webR.read()) {
+        if (msg.type === 'canvas') {
+          const img = new Image();
+          img.onload = () => {
+            ctx.clearRect(0, 0, modalCanvas.width, modalCanvas.height);
+            ctx.drawImage(img, 0, 0);
+            modalStatus.textContent = '';
+          };
+          img.src = msg.data.src;
+          break;
+        }
+      }
     };
+
+    canvasListener();
 
     await webR.evalR(`
       library(wordcloud)
       library(tm)
-
       words <- unlist(strsplit(tolower(section_text), "\\\\W+"))
       words <- words[nchar(words) > 3]
       stops <- c(stopwords("en"), "that", "with", "have", "will", "your", "this", "from", "they", "what")
       words <- words[!words %in% stops]
       freq  <- sort(table(words), decreasing = TRUE)[1:150]
-
       webr::canvas(width = 800, height = 400)
       par(bg = NA)
       wordcloud(
