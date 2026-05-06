@@ -165,9 +165,11 @@ plotDiv.on('plotly_click', async (event) => {
   const freqData = await freqResult.toJs();
   shelter2.purge();
 
-  const words    = freqData.values[0].values;
-  const freqs    = freqData.values[1].values;
-  const wordList = words.map((w, i) => [w, freqs[i]]);
+  // Each item in freqData.values is a list of two length-1 vectors: [word, freq]
+  const wordList = freqData.values.map(item => [
+    item.values[0].values[0], 
+    item.values[1].values[0]
+  ]);
   modalStatus.textContent = '';
 
   const ctx = modalCanvas.getContext('2d');
