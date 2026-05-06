@@ -1,5 +1,5 @@
 library(tm)
-words <- unlist(strsplit(tolower(section_text), "\\W+"))
+words <- unlist(strsplit(tolower(text), "\\W+"))
 words <- words[nchar(words) > 3]
 stops <- c(stopwords("en"), "that", "with", "have", "will", "your", "this", "from", "they", "what")
 words <- words[!words %in% stops]
