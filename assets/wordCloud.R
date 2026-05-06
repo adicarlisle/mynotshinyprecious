@@ -1,0 +1,8 @@
+library(tm)
+words <- unlist(strsplit(tolower(section_text), "\\W+"))
+words <- words[nchar(words) > 3]
+stops <- c(stopwords("en"), "that", "with", "have", "will", "your", "this", "from", "they", "what")
+words <- words[!words %in% stops]
+freq  <- sort(table(words), decreasing = TRUE)[1:100]
+list(words = names(freq), freqs = as.numeric(freq))
+

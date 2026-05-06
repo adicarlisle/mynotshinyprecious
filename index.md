@@ -255,27 +255,19 @@ layout: default
     modalTitle.textContent  = `${wp.name} — Words of the Journey`;
     modalStatus.textContent = 'Generating wordcloud...';
     modal.classList.add('open');
+    const anotherRCode = await fetch("assets/wordCloud.R").then(r => r.text());
 
     const safeText = text.replace(/'/g, "\\'").replace(/\n/g, ' ');
     await webR.evalR(`section_text <- '${safeText}'`);
 
     const shelter2   = await new webR.Shelter();
-    const freqResult = await shelter2.evalR(`
-      library(tm)
-      words <- unlist(strsplit(tolower(section_text), "\\\\W+"))
-      words <- words[nchar(words) > 3]
-      stops <- c(stopwords("en"), "that", "with", "have", "will", "your", "this", "from", "they", "what")
-      words <- words[!words %in% stops]
-      freq  <- sort(table(words), decreasing = TRUE)[1:100]
-      list(words = names(freq), freqs = as.numeric(freq))
-    `);
+    const freqResult = await shelter2.evalR(anotherRCode);
     const freqData = await freqResult.toJs();
     shelter2.purge();
 
     const words    = Array.from(freqData.values[0].values);
     const freqs    = Array.from(freqData.values[1].values);
     const wordList = words.map((w, i) => [w, freqs[i]]);
-
     modalStatus.textContent = '';
 
     const ctx = modalCanvas.getContext('2d');
