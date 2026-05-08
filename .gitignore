@@ -1,4 +1,6 @@
 /local
+/_site
+Gemfile.lock
 # History files
 .Rhistory
 .Rapp.history
