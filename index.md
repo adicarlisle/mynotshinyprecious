@@ -100,7 +100,6 @@ layout: default
 <script type="module">
   import { WebR } from 'https://webr.r-wasm.org/latest/webr.mjs';
 
-  const DEMON_MAGIC = 'eCsax85_YfFx4fW6Ao88';
 
   const FILMS = {
     fellowship: '5cd95395de30eff6ebccde5c',
@@ -149,9 +148,8 @@ layout: default
   document.getElementById('plot-status').textContent = 'Fetching quotes from Middle Earth...';
 
   const fetchQuotes = async (filmId) => {
-    const res  = await fetch(`https://the-one-api.dev/v2/movie/${filmId}/quote?limit=1000`, {
-      headers: { Authorization: `Bearer ${DEMON_MAGIC}` }
-    });
+    // Through bigthought.ai, which adds The One API key on the server, so it isn't in this page.
+    const res  = await fetch(`https://bigthought.ai/notshiny/api/movie/${filmId}/quote`);
     const json = await res.json();
     return json.docs.map(q => q.dialog).join(' ');
   };
